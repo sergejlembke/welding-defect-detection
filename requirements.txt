@@ -18,3 +18,4 @@ hydra-core
 omegaconf
 pandas
 kaggle
+tqdm
