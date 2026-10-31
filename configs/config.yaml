@@ -1,0 +1,18 @@
+defaults:
+  - model: resnet50_finetune
+  - dataset: welding_default
+  - _self_
+
+epochs: 15
+seed: 42
+device: "auto"
+
+experiment_name: "Welding_Defect_Inspection"
+mlflow_tracking_uri: "sqlite:///mlflow.db"
+
+hydra:
+  run:
+    dir: outputs/runs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+  sweep:
+    dir: outputs/multiruns/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    subdir: ${hydra.job.num}
