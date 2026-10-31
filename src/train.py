@@ -164,13 +164,13 @@ def validate_one_epoch(
 
 @hydra.main(version_base=None, config_path="../configs", config_name="config")
 def main(cfg: DictConfig) -> None:
-    print(f"[Info] Starte Training mit Config:\n{cfg}")
+    print(f"[Info] Start training with config:\n{cfg}")
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"[Info] Nutze Device: {device}")
+    print(f"[Info] Using device: {device}")
 
-    # 1. Dateibasiertes MLflow-Tracking setzen
-    tracking_uri = getattr(cfg.mlflow, "tracking_uri", "file:./mlruns")
+    # MLflow-Tracking
+    tracking_uri = getattr(cfg.mlflow, "tracking_uri", "sqlite:///mlflow.db")
     experiment_name = getattr(
         cfg.mlflow, "experiment_name", "Welding_Defect_Inspection"
     )
@@ -178,12 +178,20 @@ def main(cfg: DictConfig) -> None:
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(experiment_name)
 
-    # 2. DataLoader & Modell initialisieren
+    # Initialize dataLoader & model
     train_loader, val_loader = create_dataloaders(cfg)
 
+    # Get unique name
     model_name = getattr(
         cfg.model, "model_name", getattr(cfg.model, "name", "resnet50")
     )
+    config_name = getattr(cfg.model, "name", model_name)
+
+    # Create dynamic save path
+    output_dir = Path("outputs")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    best_model_path = output_dir / f"best_{config_name}.pt"
+
     lr = getattr(cfg.model, "learning_rate", 1e-4)
 
     model = WeldingDefectClassifier(
@@ -192,21 +200,19 @@ def main(cfg: DictConfig) -> None:
     criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr)
 
-    output_dir = Path("outputs")
-    output_dir.mkdir(parents=True, exist_ok=True)
-    best_model_path = output_dir / "best_model.pt"
-
     best_val_loss = float("inf")
     global_step = 0
 
-    # 3. Training Loop
+    # Training loop
     with mlflow.start_run():
         mlflow.log_params(
             {
+                "config_name": config_name,
                 "model_name": model_name,
                 "learning_rate": lr,
                 "epochs": cfg.epochs,
                 "device": str(device),
+                "checkpoint_path": str(best_model_path),
             }
         )
 
@@ -240,12 +246,12 @@ def main(cfg: DictConfig) -> None:
             mlflow.log_metric("val_loss", val_loss, step=epoch)
             mlflow.log_metric("val_acc", val_acc, step=epoch)
 
-            # Bestes Modell speichern
+            # Save best model
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 torch.save(model.state_dict(), best_model_path)
                 print(
-                    f"--> Bestes Modell gespeichert ({best_model_path}) mit Val Loss: {val_loss:.4f}"
+                    f"--> Best mmodel saved ({best_model_path}) with Val Loss: {val_loss:.4f}"
                 )
 
 
