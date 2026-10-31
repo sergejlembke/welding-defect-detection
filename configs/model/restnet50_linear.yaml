@@ -1,0 +1,9 @@
+name: "resnet50_linear"
+model_name: "resnet50"
+pretrained: true
+freeze_backbone: true
+
+# Hyperparameter speziell für den Linear Probe (höhere Lernrate, da nur Head trainiert)
+lr: 1e-3
+weight_decay: 1e-2
+optimizer: "adamw"
