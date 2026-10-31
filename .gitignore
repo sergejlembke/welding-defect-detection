@@ -1,0 +1,48 @@
+# Python & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Datasets & Heavy Raw Data
+data/*
+!data/.gitkeep
+
+# Training Outputs, Hydra Logs & Model Checkpoints
+outputs/
+multirun/
+checkpoints/
+.hydra/
+*.pt
+*.pth
+*.onnx
+*.bin
+*.safetensors
+*.log
+
+# MLflow Tracking DB & Runs
+mlflow.db
+mlruns/
+
+# Environment Variables & Secrets
+.env
+.env.*
+
+# IDEs & OS Specific
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+.aiignore
+
+# Testing & Linting Caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
