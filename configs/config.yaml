@@ -7,8 +7,9 @@ epochs: 15
 seed: 42
 device: "auto"
 
-experiment_name: "Welding_Defect_Inspection"
-mlflow_tracking_uri: "sqlite:///mlflow.db"
+mlflow:
+  tracking_uri: "sqlite:///mlflow.db"
+  experiment_name: "Welding_Defect_Inspection"
 
 hydra:
   run:
