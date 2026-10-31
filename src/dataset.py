@@ -3,6 +3,7 @@ from pathlib import Path
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import cv2
+cv2.setNumThreads(0)
 import torch
 from torch.utils.data import Dataset
 
