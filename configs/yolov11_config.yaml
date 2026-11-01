@@ -1,0 +1,17 @@
+defaults:
+  - _self_
+
+epochs: 100
+imgsz: 1024        # Höhere Auflösung für feine Schweißnahtdefekte
+batch_size: 64     # Aufgeteilt auf 4 GPUs (16 pro GPU)
+device: [0, 1, 2, 3] # Nutzt alle 4 GPUs via DDP
+
+model:
+  name: "yolov11x.pt"
+
+dataset:
+  data_yaml: "data/raw_welding_dataset/The Welding Defect Dataset - v2/The Welding Defect Dataset - v2/data.yaml"
+
+mlflow:
+  tracking_uri: "sqlite:///outputs/mlflow.db"
+  experiment_name: "Welding_Defect_Inspection"
