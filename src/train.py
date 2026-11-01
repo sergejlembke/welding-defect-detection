@@ -19,15 +19,15 @@ os.environ["MLFLOW_ALLOW_FILE_STORE"] = "true"
 def create_dataloaders(
     cfg: DictConfig,
 ) -> tuple[DataLoader, DataLoader]:
-    """Lädt train.csv und val.csv und erstellt PyTorch DataLoader."""
+    """Loads train.csv and val.csv and creates PyTorch DataLoader."""
     project_root = Path.cwd()
     train_csv = project_root / "data/train.csv"
     val_csv = project_root / "data/val.csv"
 
     if not train_csv.exists() or not val_csv.exists():
         raise FileNotFoundError(
-            "data/train.csv oder data/val.csv nicht gefunden. "
-            "Bitte zuerst prepare_yolo_dataset.py ausführen."
+            "data/train.csv oder data/val.csv not found. "
+            "Please run prepare_yolo_dataset.py first."
         )
 
     train_df = pd.read_csv(train_csv)
@@ -80,7 +80,7 @@ def train_one_epoch(
     global_step: int,
     log_interval: int = 10,
 ) -> tuple[float, int]:
-    """Trainiert das Modell für eine Epoche."""
+    """Trains model for one epoch."""
     model.train()
     running_loss = 0.0
     total_samples = 0
@@ -134,7 +134,7 @@ def validate_one_epoch(
     criterion: torch.nn.Module,
     device: torch.device,
 ) -> tuple[float, float]:
-    """Evaluiert das Modell auf dem Validierungsdatensatz."""
+    """Evaluates the model on the validation dataset."""
     model.eval()
     running_loss = 0.0
     correct = 0
@@ -251,7 +251,7 @@ def main(cfg: DictConfig) -> None:
                 best_val_loss = val_loss
                 torch.save(model.state_dict(), best_model_path)
                 print(
-                    f"--> Best mmodel saved ({best_model_path}) with Val Loss: {val_loss:.4f}"
+                    f"--> Best model saved ({best_model_path}) with Val Loss: {val_loss:.4f}"
                 )
 
 
