@@ -7,7 +7,7 @@ batch_size: 64     # Aufgeteilt auf 4 GPUs (16 pro GPU)
 device: [0, 1, 2, 3] # Nutzt alle 4 GPUs via DDP
 
 model:
-  name: "yolov11x.pt"
+  name: "yolo11x.pt"
 
 dataset:
   data_yaml: "data/raw_welding_dataset/The Welding Defect Dataset - v2/The Welding Defect Dataset - v2/data.yaml"
