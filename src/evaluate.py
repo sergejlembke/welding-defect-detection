@@ -20,12 +20,7 @@ from src.models import WeldingDefectClassifier
 
 
 def plot_confusion_matrix(cm: np.ndarray, output_path: Path) -> None:
-    """Plot and save confusion matrix visualization.
-
-    Args:
-        cm: Calculated confusion matrix numpy array.
-        output_path: File path where the plot PNG will be saved.
-    """
+    """Plot and save confusion matrix visualization."""
     fig, ax = plt.subplots(figsize=(6, 5))
     disp = ConfusionMatrixDisplay(
         confusion_matrix=cm, display_labels=["OK (0)", "Defect (1)"]
@@ -44,14 +39,7 @@ def plot_pr_curve(
     pr_auc: float,
     output_path: Path,
 ) -> None:
-    """Plot and save Precision-Recall curve visualization.
-
-    Args:
-        precisions: Calculated precision points from curve.
-        recalls: Calculated recall points from curve.
-        pr_auc: Calculated area under precision-recall curve.
-        output_path: File path where the plot PNG will be saved.
-    """
+    """Plot and save Precision-Recall curve visualization."""
     plt.figure(figsize=(7, 5))
     plt.plot(
         recalls,
@@ -76,11 +64,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Evaluation Script for Welding Defect Detection Model"
     )
+    # Angepasster Default-Pfad passend zum neuen Namensschema
     parser.add_argument(
         "--model_path",
         type=str,
-        default="outputs/best_model.pt",
-        help="Path to trained model checkpoint file",
+        default="outputs/best_resnet50_finetune.pt",
+        help="Path to trained model checkpoint file (z.B. outputs/best_resnet50_linear.pt oder outputs/best_resnet50_finetune.pt)",
     )
     parser.add_argument(
         "--model_name",
@@ -97,7 +86,7 @@ def main() -> None:
     parser.add_argument(
         "--output_dir",
         type=str,
-        default="outputs",
+        default="outputs/eval",
         help="Directory to store evaluation plots and metrics.json",
     )
     parser.add_argument(
