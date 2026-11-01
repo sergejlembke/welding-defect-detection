@@ -170,7 +170,7 @@ def main(cfg: DictConfig) -> None:
     print(f"[Info] Using device: {device}")
 
     # MLflow-Tracking
-    tracking_uri = getattr(cfg.mlflow, "tracking_uri", "sqlite:///mlflow.db")
+    tracking_uri = getattr(cfg.mlflow, "tracking_uri", "sqlite:///outputs/mlflow.db")
     experiment_name = getattr(
         cfg.mlflow, "experiment_name", "Welding_Defect_Inspection"
     )
