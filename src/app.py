@@ -11,7 +11,8 @@ import torch
 from src.dataset import get_default_transforms
 from src.models import WeldingDefectClassifier
 
-MODEL_PATH = "outputs/best_model.pt"
+# Aktualisierter Pfad zum spezifischen Checkpoint
+MODEL_PATH = "outputs/best_resnet50_finetune.pt"
 MODEL_NAME = "resnet50"
 DECISION_THRESHOLD = 0.3
 
@@ -22,11 +23,10 @@ val_transform = get_default_transforms(img_size=224, is_train=False)
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Lifespan context manager handling application startup and shutdown events."""
-    # --- STARTUP LOGIC ---
     try:
         model = WeldingDefectClassifier(model_name=MODEL_NAME, freeze_backbone=False)
         try:
-            state_dict = torch.load(MODEL_PATH, map_location=device)
+            state_dict = torch.load(MODEL_PATH, map_location=device, weights_only=True)
             model.load_state_dict(state_dict)
             print(f"[Info] Checkpoint loaded from: {MODEL_PATH}")
         except FileNotFoundError:
@@ -40,9 +40,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         app.state.model = None
         print(f"[Error] Failed to load model: {e}")
 
-    yield  # Application runs and serves requests here
+    yield
 
-    # --- SHUTDOWN LOGIC ---
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
     print("[Info] Application shutdown: Cleared GPU memory cache.")
@@ -57,8 +56,6 @@ app = FastAPI(
 
 
 class PredictionResponse(BaseModel):
-    """Schema for prediction response payload."""
-
     filename: str
     is_defect: bool
     defect_probability: float
@@ -68,7 +65,6 @@ class PredictionResponse(BaseModel):
 
 @app.get("/health", status_code=status.HTTP_200_OK)
 def health_check() -> dict[str, str]:
-    """Health check endpoint for container probes and status monitoring."""
     if getattr(app.state, "model", None) is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -79,14 +75,6 @@ def health_check() -> dict[str, str]:
 
 @app.post("/predict", response_model=PredictionResponse)
 async def predict_welding_seam(file: UploadFile = File(...)) -> PredictionResponse:
-    """Inference endpoint accepting an uploaded inspection image and returning defect metrics.
-
-    Args:
-        file: Uploaded image file (JPEG or PNG).
-
-    Returns:
-        PredictionResponse object containing defect metrics and latency.
-    """
     model: WeldingDefectClassifier | None = getattr(app.state, "model", None)
     if model is None:
         raise HTTPException(
