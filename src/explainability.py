@@ -120,3 +120,50 @@ def run_explainability_pipeline(
     comparison_image = np.hstack([rgb_img, overlay])
     save_filename = output_dir / f"gradcam_{image_path.stem}.png"
     cv2.imwrite(str(save_filename), cv2.cvtColor(comparison_image, cv2.COLOR_RGB2BGR))
+    print(f"[Success] Grad-CAM visualization saved to: {save_filename}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Grad-CAM Explainability Pipeline for Welding Defects"
+    )
+    parser.add_argument(
+        "--image_path",
+        type=str,
+        required=True,
+        help="Path to target inspection image",
+    )
+    parser.add_argument(
+        "--model_path",
+        type=str,
+        default=None,
+        help="Path to trained model checkpoint file (.pt)",
+    )
+    parser.add_argument(
+        "--model_name",
+        type=str,
+        default="resnet50",
+        help="timm backbone architecture identifier",
+    )
+    parser.add_argument(
+        "--output_dir",
+        type=str,
+        default="outputs/gradcam",
+        help="Directory where exported visualization images will be saved",
+    )
+    parser.add_argument(
+        "--img_size",
+        type=int,
+        default=224,
+        help="Target resolution for model input",
+    )
+    args = parser.parse_args()
+
+    run_explainability_pipeline(
+        image_path=args.image_path,
+        model_path=args.model_path,
+        model_name=args.model_name,
+        output_dir=args.output_dir,
+        img_size=args.img_size,
+    )
+    print(f"[Success] Grad-CAM visualization saved to: {args.output_dir}")
