@@ -127,11 +127,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Grad-CAM Explainability Pipeline for Welding Defects"
     )
+    # Entweder ein einzelnes Bild ODER einen ganzen Ordner übergeben
     parser.add_argument(
         "--image_path",
         type=str,
-        required=True,
+        default=None,
         help="Path to target inspection image",
+    )
+    parser.add_argument(
+        "--image_dir",
+        type=str,
+        default=None,
+        help="Directory containing multiple images for batch processing",
     )
     parser.add_argument(
         "--model_path",
@@ -159,11 +166,33 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    run_explainability_pipeline(
-        image_path=args.image_path,
-        model_path=args.model_path,
-        model_name=args.model_name,
-        output_dir=args.output_dir,
-        img_size=args.img_size,
-    )
-    print(f"[Success] Grad-CAM visualization saved to: {args.output_dir}")
+    if args.image_dir:
+        image_dir = Path(args.image_dir)
+        image_paths = sorted(list(image_dir.glob("*.jpg")) + list(image_dir.glob("*.png")))
+        print(f"[Info] Starte Batch-Verarbeitung für {len(image_paths)} Bilder aus: {image_dir}")
+
+        for img_path in image_paths:
+            print(f"Verarbeite: {img_path.name}")
+            try:
+                run_explainability_pipeline(
+                    image_path=str(img_path),
+                    model_path=args.model_path,
+                    model_name=args.model_name,
+                    output_dir=args.output_dir,
+                    img_size=args.img_size,
+                )
+            except Exception as e:
+                print(f"[Error] Fehler bei {img_path.name}: {e}")
+        print(f"[Success] Alle Grad-CAM Visualisierungen im Batch gespeichert in: {args.output_dir}")
+
+    elif args.image_path:
+        run_explainability_pipeline(
+            image_path=args.image_path,
+            model_path=args.model_path,
+            model_name=args.model_name,
+            output_dir=args.output_dir,
+            img_size=args.img_size,
+        )
+        print(f"[Success] Grad-CAM visualization saved to: {args.output_dir}")
+    else:
+        print("[Error] Entweder --image_path oder --image_dir muss angegeben werden!")
