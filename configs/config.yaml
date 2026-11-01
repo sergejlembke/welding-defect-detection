@@ -8,7 +8,7 @@ seed: 42
 device: "auto"
 
 mlflow:
-  tracking_uri: "sqlite:///mlflow.db"
+  tracking_uri: "sqlite:///outputs/mlflow.db"
   experiment_name: "Welding_Defect_Inspection"
 
 hydra:
