@@ -19,3 +19,4 @@ omegaconf
 pandas
 kaggle
 tqdm
+ultralytics
