@@ -38,7 +38,7 @@ def main(cfg: DictConfig) -> None:
     # Define unique run identifier and target project output directory
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     run_name = f"run_{timestamp}"
-    project_dir = Path("outputs/yolov11_runs")
+    project_dir = Path("outputs/yolov11_runs").resolve()
 
     logger.info(f"Loading pretrained architecture: {cfg.model.name}...")
     model = YOLO(cfg.model.name)
