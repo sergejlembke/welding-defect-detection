@@ -46,6 +46,9 @@ def main(cfg: DictConfig) -> None:
 
     logger.info(f"Starting execution for run '{run_name}' on target device(s): {device}...")
 
+    # Enable automatic background system metrics logging (GPU util, VRAM, CPU, RAM)
+    mlflow.enable_system_metrics_logging()
+
     with mlflow.start_run(run_name=f"yolov11x_training_{run_name}"):
         # Launch Ultralytics multi-GPU training process
         model.train(
