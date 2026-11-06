@@ -13,14 +13,16 @@ build/
 data/*
 !data/.gitkeep
 
-# Training Outputs, Hydra Logs & Model Checkpoints
+# Model weights & Training Outputs, Hydra Logs & Model Checkpoints
 outputs/
+weights/
 multirun/
 checkpoints/
 .hydra/
 *.pt
 *.pth
 *.onnx
+*.engine
 *.bin
 *.safetensors
 *.log
