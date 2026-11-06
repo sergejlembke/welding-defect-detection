@@ -1,0 +1,9 @@
+repos:
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.10
+    hooks:
+      - id: bandit
+        name: bandit (SAST Security Check)
+        args: ["-r", "src/", "-sk", "B101"]
+        # -r: Recursive search in the src/ directory
+        # -sk B101: Ignore assert-statements (in ML code for Tensor-checks common)
