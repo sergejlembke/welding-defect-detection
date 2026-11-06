@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from pathlib import Path
 import hydra
 import mlflow
@@ -60,6 +61,9 @@ def main(cfg: DictConfig) -> None:
             }
         )
 
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        run_name = f"run_{timestamp}"
+
         results = model.train(
             data=str(data_yaml_path),
             epochs=cfg.epochs,
@@ -67,8 +71,8 @@ def main(cfg: DictConfig) -> None:
             batch=cfg.batch_size,
             device=device_arg,
             project=str(output_dir),
-            name="run",
-            exist_ok=True,
+            name=run_name,
+            exist_ok=False,
             save=True,
             plots=True,
         )
