@@ -1,14 +1,15 @@
 import sys
 from pathlib import Path
-import hydra
-from omegaconf import DictConfig, OmegaConf
-import mlflow
-from ultralytics import YOLO
 
 # Add project root directory to sys.path to enable absolute imports from 'src'
 project_root = Path(__file__).resolve().parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
+
+import hydra
+import mlflow
+from omegaconf import DictConfig, OmegaConf
+from ultralytics import YOLO
 
 from src.utils.logger import setup_logger
 
@@ -20,7 +21,7 @@ def find_latest_checkpoint(runs_dir: Path) -> Path:
         runs_dir (Path): Base directory containing training output runs.
 
     Returns:
-        Path: Path to the best.pt weights file, or fallback path.
+        Path: Path to the best.pt weights file.
     """
     if not runs_dir.exists():
         return Path("outputs/yolov11_runs/latest/weights/best.pt")
@@ -47,15 +48,21 @@ def main(cfg: DictConfig) -> None:
     # Resolve evaluation weights path dynamically or from configuration
     custom_weights = cfg.get("eval_weights", None)
     if custom_weights:
-        weights_path = Path(custom_weights)
+        weights_path = Path(custom_weights).resolve()
     else:
-        weights_path = find_latest_checkpoint(Path("outputs/yolov11_runs"))
+        weights_path = find_latest_checkpoint(Path("outputs/yolov11_runs").resolve())
 
     logger.info(f"Target weights file for evaluation: {weights_path}")
 
     if not weights_path.exists():
         logger.error(f"Weights file not found at: {weights_path}")
         raise FileNotFoundError(f"Weights file not found at specified path: {weights_path}")
+
+    # Best Practice 1: Target the parent run folder (e.g., outputs/yolov11_runs/run_20261106_120715)
+    run_dir = weights_path.parent.parent.resolve()
+    eval_output_dir = run_dir / "eval"
+
+    logger.info(f"Target evaluation directory: {eval_output_dir}")
 
     # Load YOLO model
     logger.info(f"Loading pretrained weights into YOLO model from {weights_path}...")
@@ -69,19 +76,16 @@ def main(cfg: DictConfig) -> None:
 
     logger.info(f"MLflow Tracking URI: {tracking_uri} | Experiment: {experiment_name}")
 
-    # Enable automatic background system metrics logging (GPU util, VRAM, CPU, RAM)
-    mlflow.enable_system_metrics_logging()
-
-    with mlflow.start_run(run_name="yolov11x_evaluation", nested=True):
-        # Run validation split evaluation
+    with mlflow.start_run(run_name=f"yolov11x_eval_{run_dir.name}", nested=True):
+        # Execute Ultralytics validation split evaluation directly inside run_dir/eval
         logger.info("Starting validation split evaluation...")
         metrics = model.val(
             data=cfg.dataset.data_yaml,
             imgsz=cfg.imgsz,
             batch=cfg.batch_size,
             split="val",
-            project="outputs/yolov11_eval",
-            name="latest_eval",
+            project=str(run_dir),
+            name="eval",
             exist_ok=True,
         )
 
@@ -96,7 +100,7 @@ def main(cfg: DictConfig) -> None:
             f"Precision: {precision:.4f} | Recall: {recall:.4f}"
         )
 
-        # Log metrics and execution artifacts to MLflow
+        # Log metrics to MLflow
         mlflow.log_metrics(
             {
                 "eval_mAP50": map50,
@@ -105,10 +109,17 @@ def main(cfg: DictConfig) -> None:
                 "eval_recall": recall,
             }
         )
+
+        # Log evaluation artifacts (Confusion Matrix, PR-Curves) to MLflow
+        if eval_output_dir.exists():
+            logger.info(f"Logging evaluation plot artifacts from {eval_output_dir} to MLflow...")
+            mlflow.log_artifacts(str(eval_output_dir), artifact_path="eval_artifacts")
+
         mlflow.log_artifact(str(log_path))
 
     logger.info(f"Evaluation finished successfully. Execution log saved to {log_path}")
 
 
 if __name__ == "__main__":
+    # noinspection PyNoValue
     main()
