@@ -64,6 +64,9 @@ def main(cfg: DictConfig) -> None:
 
     logger.info(f"MLflow Tracking URI: {tracking_uri} | Experiment: {experiment_name}")
 
+    # Enable automatic background system metrics logging (GPU util, VRAM, CPU, RAM)
+    mlflow.enable_system_metrics_logging()
+
     with mlflow.start_run(run_name="yolov11x_evaluation", nested=True):
         # Run validation split evaluation
         logger.info("Starting validation split evaluation...")
