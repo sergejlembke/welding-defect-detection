@@ -1,11 +1,14 @@
 defaults:
-  - model: resnet50_finetune
-  - dataset: welding_default
+  - model: yolov11x
   - _self_
 
-epochs: 15
-seed: 42
-device: "auto"
+epochs: 175
+imgsz: 1024
+batch_size: 64
+device: [0, 1, 2, 3]
+
+dataset:
+  data_yaml: "data/raw_welding_dataset/The Welding Defect Dataset - v2/The Welding Defect Dataset - v2/data.yaml"
 
 mlflow:
   tracking_uri: "sqlite:///outputs/mlflow.db"
@@ -13,7 +16,5 @@ mlflow:
 
 hydra:
   run:
-    dir: outputs/runs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-  sweep:
-    dir: outputs/multiruns/${now:%Y-%m-%d}/${now:%H-%M-%S}
-    subdir: ${hydra.job.num}
+    dir: outputs/logs
+  output_subdir: null
