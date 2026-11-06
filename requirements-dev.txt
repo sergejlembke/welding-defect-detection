@@ -1,0 +1,11 @@
+-r requirements.txt
+
+# Testing & Quality
+pytest
+
+# Pre-commit & Security Scans
+pre-commit
+bandit
+
+# Data Pipelines & External Tools
+kaggle
