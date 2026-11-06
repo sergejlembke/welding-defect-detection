@@ -4,6 +4,5 @@ repos:
     hooks:
       - id: bandit
         name: bandit (SAST Security Check)
-        args: ["-r", "src/", "-sk", "B101"]
-        # -r: Recursive search in the src/ directory
-        # -sk B101: Ignore assert-statements (in ML code for Tensor-checks common)
+        args: [ "-s", "B101"]
+        # -s B101: Ignore assert-statements (common for Tensor-checks common)
