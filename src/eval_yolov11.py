@@ -1,10 +1,15 @@
+import sys
 from pathlib import Path
 import hydra
 from omegaconf import DictConfig, OmegaConf
 import mlflow
 from ultralytics import YOLO
 
-# Import custom logger module
+# Add project root directory to sys.path to enable absolute imports from 'src'
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
 from src.utils.logger import setup_logger
 
 
