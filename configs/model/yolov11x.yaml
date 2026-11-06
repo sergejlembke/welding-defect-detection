@@ -1,4 +1,4 @@
-name: "yolo11x.pt"
+name: "weights/pretrained/yolo11x.pt"
 
 # Training & Optimizer Hyperparameter
 hyperparameters:
