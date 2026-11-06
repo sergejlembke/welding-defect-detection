@@ -1,0 +1,20 @@
+name: "yolo11x.pt"
+
+# Training & Optimizer Hyperparameter
+hyperparameters:
+  optimizer: "auto"     # Options: auto, AdamW, SGD
+  lr0: 0.01             # Initial learning rate
+  lrf: 0.01             # Final learning rate (lr0 * lrf)
+  momentum: 0.937
+  weight_decay: 0.0005
+
+  # Weighted loss (cls = 1.0 for a sharper distinction)
+  box: 7.5
+  cls: 1.0
+  dfl: 1.5
+
+  # Augmentiation
+  mosaic: 1.0
+  mixup: 0.15
+  copy_paste: 0.3
+  close_mosaic: 15
