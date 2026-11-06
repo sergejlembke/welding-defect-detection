@@ -3,7 +3,7 @@ defaults:
   - _self_
 
 epochs: 175
-imgsz: 1024
+imgsz: 640
 batch_size: 64
 device: [0, 1, 2, 3]
 
