@@ -1,8 +1,9 @@
 import os
+from datetime import datetime
 from pathlib import Path
 import hydra
 import mlflow
-from omegaconf import DictConfig
+from omegaconf import DictConfig, ListConfig
 from ultralytics import YOLO
 
 os.environ["MLFLOW_ALLOW_FILE_STORE"] = "true"
@@ -15,18 +16,41 @@ def main(cfg: DictConfig) -> None:
     print(f"[Info] Starte YOLOv11 Evaluierung mit Config:\n{cfg}")
 
     project_root = Path.cwd()
+    yolo_runs_dir = project_root / "outputs" / "yolov11_runs"
 
-    # 1. Gewichte und Pfade auflösen
-    weights_path = getattr(
-        cfg, "weights_path", "outputs/yolov11_runs/run/weights/best.pt"
-    )
-    best_weights = project_root / weights_path
+    # Get weights of latest run dynamically
+    if hasattr(cfg, "weights_path") and cfg.weights_path:
+        best_weights = project_root / cfg.weights_path
+        run_name_tag = best_weights.parent.parent.name
+    else:
+        all_runs = sorted(
+            [d for d in yolo_runs_dir.glob("run_*") if d.is_dir()],
+            key=os.path.getmtime,
+            reverse=True,
+        )
+
+        if not all_runs:
+            raise FileNotFoundError(
+                f"No training runs (run_*) in {yolo_runs_dir} found."
+                "Execute train_yolov11.py first."
+            )
+
+        latest_run = all_runs[0]
+        best_weights = latest_run / "weights" / "best.pt"
+        run_name_tag = latest_run.name
 
     if not best_weights.exists():
         raise FileNotFoundError(
-            f"Modellgewichte nicht gefunden unter: {best_weights}. "
-            "Führe zuerst train_yolov11.py aus oder passe weights_path an."
+            f"Model weights not found at: {best_weights}."
         )
+
+    print(f"[Info] Use model weights from run: '{run_name_tag}' ({best_weights})")
+
+    # Create unique eval folder with timestamp
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    eval_run_name = f"eval_{run_name_tag}_{timestamp}"
+    output_dir = project_root / "outputs" / "yolov11_eval" / eval_run_name
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     test_images_dir = (
         project_root
@@ -35,17 +59,13 @@ def main(cfg: DictConfig) -> None:
 
     if not test_images_dir.exists():
         raise FileNotFoundError(
-            f"Testbild-Ordner nicht gefunden unter: {test_images_dir}"
+            f"Test image directory not found at: {test_images_dir}"
         )
 
-    output_dir = project_root / "outputs" / "yolov11_eval"
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # 2. Modell mit trainierten Gewichten laden
-    print(f"[Info] Lade beste Gewichte aus: {best_weights}")
+    # Load model with trained weights
     model = YOLO(str(best_weights))
 
-    # 3. MLflow Tracking Setup
+    # MLflow-Tracking Setup
     tracking_uri = getattr(
         cfg.mlflow, "tracking_uri", "sqlite:///outputs/mlflow.db"
     )
@@ -56,20 +76,26 @@ def main(cfg: DictConfig) -> None:
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(experiment_name)
 
-    conf_threshold = getattr(cfg, "conf_threshold", 0.25)
+    conf_threshold = getattr(cfg, "conf_threshold", 0.35)
 
-    with mlflow.start_run(run_name="yolov11_test_evaluation"):
+    device_arg = (
+        list(cfg.device)
+        if isinstance(cfg.device, (list, ListConfig))
+        else cfg.device
+    )
+
+    with mlflow.start_run(run_name=f"eval_{run_name_tag}"):
         mlflow.log_params(
             {
                 "eval_weights": str(best_weights),
                 "conf_threshold": conf_threshold,
+                "eval_run_name": eval_run_name,
                 "test_images_dir": str(test_images_dir),
             }
         )
 
-        # 4. Inferenz auf den Testbildern & Bounding-Box Visualisierung speichern
         print(
-            f"[Info] Generiere Bounding-Box Visualisierungen (Conf Threshold: {conf_threshold})..."
+            f"[Info] Generate Bounding-Box Visualizations (Conf Threshold: {conf_threshold})..."
         )
         model.predict(
             source=str(test_images_dir),
@@ -80,15 +106,17 @@ def main(cfg: DictConfig) -> None:
             exist_ok=True,
         )
 
-        # 5. quantitative Test-Metriken (mAP, Precision, Recall) berechnen
         data_yaml_path = project_root / cfg.dataset.data_yaml
         if data_yaml_path.exists():
-            print("[Info] Berechne Test-Metriken auf dem offiziellen Split...")
+            print("[Info] Calculate test-metrics on official split...")
             metrics = model.val(
                 data=str(data_yaml_path),
                 split="test",
                 conf=conf_threshold,
-                device=cfg.device,
+                device=device_arg,
+                project=str(output_dir),
+                name="val_metrics",
+                exist_ok=True,
             )
 
             if hasattr(metrics, "results_dict"):
@@ -104,7 +132,7 @@ def main(cfg: DictConfig) -> None:
 
         saved_path = output_dir / "visualizations"
         print(
-            f"[Success] Evaluierung abgeschlossen! Bounding-Box-Bilder liegen unter: {saved_path}"
+            f"[Success] Evaluation completed! Results are saved at: {saved_path}"
         )
 
 
