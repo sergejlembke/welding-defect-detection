@@ -13,7 +13,7 @@ os.environ["MLFLOW_ALLOW_FILE_STORE"] = "true"
     version_base=None, config_path="../configs", config_name="yolov11_config"
 )
 def main(cfg: DictConfig) -> None:
-    print(f"[Info] Starte YOLOv11 Evaluierung mit Config:\n{cfg}")
+    print(f"[Info] Start YOLOv11 evaluation with config:\n{cfg}")
 
     project_root = Path.cwd()
     yolo_runs_dir = project_root / "outputs" / "yolov11_runs"
@@ -95,12 +95,13 @@ def main(cfg: DictConfig) -> None:
         )
 
         print(
-            f"[Info] Generate Bounding-Box Visualizations (Conf Threshold: {conf_threshold})..."
+            f"[Info] Generate Inference & Feature-Maps (Conf Threshold: {conf_threshold})..."
         )
         model.predict(
             source=str(test_images_dir),
             conf=conf_threshold,
             save=True,
+            visualize=True, # saves the Activation-Feature-Maps
             project=str(output_dir),
             name="visualizations",
             exist_ok=True,
