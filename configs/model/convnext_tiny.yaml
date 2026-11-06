@@ -1,9 +1,0 @@
-name: "convnext_tiny"
-model_name: "convnext_tiny"
-pretrained: true
-freeze_backbone: false
-
-# Fine-Tuning Hyperparameter für moderne ConvNeXt-Architekturen
-lr: 5e-5
-weight_decay: 1e-2
-optimizer: "adamw"
