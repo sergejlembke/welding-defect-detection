@@ -28,6 +28,7 @@ checkpoints/
 # MLflow Tracking DB & Runs
 mlflow.db
 mlruns/
+runs/
 
 # Environment Variables & Secrets
 .env
