@@ -1,140 +1,105 @@
-import os
-from datetime import datetime
 from pathlib import Path
 import hydra
+from omegaconf import DictConfig, OmegaConf
 import mlflow
-from omegaconf import DictConfig, ListConfig
 from ultralytics import YOLO
 
-os.environ["MLFLOW_ALLOW_FILE_STORE"] = "true"
+# Import custom logger module
+from src.utils.logger import setup_logger
 
 
-@hydra.main(
-    version_base=None, config_path="../configs", config_name="yolov11_config"
-)
-def main(cfg: DictConfig) -> None:
-    print(f"[Info] Start YOLOv11 evaluation with config:\n{cfg}")
+def find_latest_checkpoint(runs_dir: Path) -> Path:
+    """Locate the best weights file from the most recent training run directory.
 
-    project_root = Path.cwd()
-    yolo_runs_dir = project_root / "outputs" / "yolov11_runs"
+    Args:
+        runs_dir (Path): Base directory containing training output runs.
 
-    # Get weights of latest run dynamically
-    if hasattr(cfg, "weights_path") and cfg.weights_path:
-        best_weights = project_root / cfg.weights_path
-        run_name_tag = best_weights.parent.parent.name
-    else:
-        all_runs = sorted(
-            [d for d in yolo_runs_dir.glob("run_*") if d.is_dir()],
-            key=os.path.getmtime,
-            reverse=True,
-        )
+    Returns:
+        Path: Path to the best.pt weights file, or fallback path.
+    """
+    if not runs_dir.exists():
+        return Path("outputs/yolov11_runs/latest/weights/best.pt")
 
-        if not all_runs:
-            raise FileNotFoundError(
-                f"No training runs (run_*) in {yolo_runs_dir} found."
-                "Execute train_yolov11.py first."
-            )
-
-        latest_run = all_runs[0]
+    run_dirs = sorted([d for d in runs_dir.iterdir() if d.is_dir() and d.name.startswith("run_")])
+    if run_dirs:
+        latest_run = run_dirs[-1]
         best_weights = latest_run / "weights" / "best.pt"
-        run_name_tag = latest_run.name
+        if best_weights.exists():
+            return best_weights
 
-    if not best_weights.exists():
-        raise FileNotFoundError(
-            f"Model weights not found at: {best_weights}."
-        )
+    return Path("outputs/yolov11_runs/latest/weights/best.pt")
 
-    print(f"[Info] Use model weights from run: '{run_name_tag}' ({best_weights})")
 
-    # Create unique eval folder with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    eval_run_name = f"eval_{run_name_tag}_{timestamp}"
-    output_dir = project_root / "outputs" / "yolov11_eval" / eval_run_name
-    output_dir.mkdir(parents=True, exist_ok=True)
+@hydra.main(config_path="../configs", config_name="config", version_base="1.3")
+def main(cfg: DictConfig) -> None:
+    """Run model evaluation pipeline using Ultralytics YOLOv11 and log metrics to MLflow."""
+    log_path = Path("outputs/logs/eval_yolov11.log")
+    logger = setup_logger(log_path, logger_name="eval_yolov11")
 
-    test_images_dir = (
-        project_root
-        / "data/raw_welding_dataset/The Welding Defect Dataset - v2/The Welding Defect Dataset - v2/test/images"
-    )
+    logger.info("Initializing YOLOv11 evaluation pipeline...")
+    logger.info(f"Loaded Hydra Configuration:\n{OmegaConf.to_yaml(cfg)}")
 
-    if not test_images_dir.exists():
-        raise FileNotFoundError(
-            f"Test image directory not found at: {test_images_dir}"
-        )
+    # Resolve evaluation weights path dynamically or from configuration
+    custom_weights = cfg.get("eval_weights", None)
+    if custom_weights:
+        weights_path = Path(custom_weights)
+    else:
+        weights_path = find_latest_checkpoint(Path("outputs/yolov11_runs"))
 
-    # Load model with trained weights
-    model = YOLO(str(best_weights))
+    logger.info(f"Target weights file for evaluation: {weights_path}")
 
-    # MLflow-Tracking Setup
-    tracking_uri = getattr(
-        cfg.mlflow, "tracking_uri", "sqlite:///outputs/mlflow.db"
-    )
-    experiment_name = getattr(
-        cfg.mlflow, "experiment_name", "Welding_Defect_Inspection"
-    )
+    if not weights_path.exists():
+        logger.error(f"Weights file not found at: {weights_path}")
+        raise FileNotFoundError(f"Weights file not found at specified path: {weights_path}")
 
+    # Load YOLO model
+    logger.info(f"Loading pretrained weights into YOLO model from {weights_path}...")
+    model = YOLO(str(weights_path))
+
+    # Configure MLflow tracking environment
+    tracking_uri = cfg.mlflow.tracking_uri
+    experiment_name = cfg.mlflow.experiment_name
     mlflow.set_tracking_uri(tracking_uri)
     mlflow.set_experiment(experiment_name)
 
-    conf_threshold = getattr(cfg, "conf_threshold", 0.35)
+    logger.info(f"MLflow Tracking URI: {tracking_uri} | Experiment: {experiment_name}")
 
-    device_arg = (
-        list(cfg.device)
-        if isinstance(cfg.device, (list, ListConfig))
-        else cfg.device
-    )
-
-    with mlflow.start_run(run_name=f"eval_{run_name_tag}"):
-        mlflow.log_params(
-            {
-                "eval_weights": str(best_weights),
-                "conf_threshold": conf_threshold,
-                "eval_run_name": eval_run_name,
-                "test_images_dir": str(test_images_dir),
-            }
-        )
-
-        print(
-            f"[Info] Generate Inference & Feature-Maps (Conf Threshold: {conf_threshold})..."
-        )
-        model.predict(
-            source=str(test_images_dir),
-            conf=conf_threshold,
-            save=True,
-            visualize=True, # saves the Activation-Feature-Maps
-            project=str(output_dir),
-            name="visualizations",
+    with mlflow.start_run(run_name="yolov11x_evaluation", nested=True):
+        # Run validation split evaluation
+        logger.info("Starting validation split evaluation...")
+        metrics = model.val(
+            data=cfg.dataset.data_yaml,
+            imgsz=cfg.imgsz,
+            batch=cfg.batch_size,
+            split="val",
+            project="outputs/yolov11_eval",
+            name="latest_eval",
             exist_ok=True,
         )
 
-        data_yaml_path = project_root / cfg.dataset.data_yaml
-        if data_yaml_path.exists():
-            print("[Info] Calculate test-metrics on official split...")
-            metrics = model.val(
-                data=str(data_yaml_path),
-                split="test",
-                conf=conf_threshold,
-                device=device_arg,
-                project=str(output_dir),
-                name="val_metrics",
-                exist_ok=True,
-            )
+        # Extract quantitative performance metrics
+        map50 = float(metrics.box.map50)
+        map50_95 = float(metrics.box.map)
+        precision = float(metrics.box.mp)
+        recall = float(metrics.box.mr)
 
-            if hasattr(metrics, "results_dict"):
-                for key, val in metrics.results_dict.items():
-                    if isinstance(val, (int, float)):
-                        clean_key = (
-                            f"test_{key}"
-                            .replace("(", "_")
-                            .replace(")", "_")
-                            .replace("/", "_")
-                        )
-                        mlflow.log_metric(clean_key, float(val))
-
-        saved_path = output_dir / "visualizations"
-        print(
-            f"[Success] Evaluation completed! Results are saved at: {saved_path}"
+        logger.info(
+            f"Evaluation Metrics -> mAP50: {map50:.4f} | mAP50-95: {map50_95:.4f} | "
+            f"Precision: {precision:.4f} | Recall: {recall:.4f}"
         )
+
+        # Log metrics and execution artifacts to MLflow
+        mlflow.log_metrics(
+            {
+                "eval_mAP50": map50,
+                "eval_mAP50_95": map50_95,
+                "eval_precision": precision,
+                "eval_recall": recall,
+            }
+        )
+        mlflow.log_artifact(str(log_path))
+
+    logger.info(f"Evaluation finished successfully. Execution log saved to {log_path}")
 
 
 if __name__ == "__main__":
