@@ -2,6 +2,7 @@
 
 # Testing & Quality
 pytest
+pillow
 
 # Pre-commit & Security Scans
 pre-commit
