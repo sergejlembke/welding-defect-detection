@@ -1,0 +1,31 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  sast_bandit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: ".python-version"
+      - name: Run Bandit (SAST)
+        run: |
+          pip install bandit
+          bandit -r src/ -sk B101
+
+  sca_grype:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Grype (SCA)
+        uses: anchore/scan-action@v3
+        with:
+          path: "."
+          fail-build: false  # Zeigt Lücken in GitHub Actions an, ohne die Pipeline sofort zu stoppen
