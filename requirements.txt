@@ -3,6 +3,9 @@ torch>=2.0.0
 ultralytics
 albumentations>=1.3.0
 opencv-python-headless>=4.8.0
+onnx
+onnxscript
+onnxruntime
 
 # Web API & Serving
 fastapi>=0.100.0
