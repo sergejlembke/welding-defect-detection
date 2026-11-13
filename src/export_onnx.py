@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import inspect
 
 import hydra
 import mlflow
@@ -91,14 +92,20 @@ def export_to_onnx(
         ref_detections, ref_features = wrapped_model(dummy_input)
 
     logger.info(f"Exportiere ONNX (opset={opset}, imgsz={imgsz}) nach: {onnx_path}")
+    export_kwargs: dict[str, object] = {
+        "opset_version": opset,
+        "input_names": ["images"],
+        "output_names": ["detections", "feature_map"],
+        "do_constant_folding": True,
+    }
+    if "dynamo" in inspect.signature(torch.onnx.export).parameters:
+        export_kwargs["dynamo"] = False
+
     torch.onnx.export(
         wrapped_model,
         dummy_input,
         str(onnx_path),
-        opset_version=opset,
-        input_names=["images"],
-        output_names=["detections", "feature_map"],
-        do_constant_folding=True,
+        **export_kwargs,
     )
 
     # Numerischer Verifikationslauf mit ONNX Runtime
