@@ -1,0 +1,5 @@
+{
+  "device": "cpu",
+  "weights": "/Users/smm/Python_Projects/welding-defect-detection/outputs/yolov11_runs/run_20261106_124707/weights/best.pt",
+  "data": "/Users/smm/Python_Projects/welding-defect-detection/data/raw_welding_dataset/The Welding Defect Dataset - v2/The Welding Defect Dataset - v2/data.yaml"
+}

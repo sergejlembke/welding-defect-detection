@@ -1,0 +1,8 @@
+{
+  "val": {
+    "status": "skipped_local_smoke_test"
+  },
+  "test": {
+    "status": "skipped_local_smoke_test"
+  }
+}
