@@ -1,0 +1,27 @@
+# Environments, Git & Caches
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.git/
+
+# Block all dataset files (images/labels), but allow directory traversal & data.yaml
+data/**/*
+!data/**/
+!data/**/*.yaml
+
+# Block model weights & exported binaries
+weights/
+*.pt
+*.pth
+*.onnx
+*.engine
+
+# Block heavy plot/image artifacts in run folders (keep CSVs, YAMLs, logs & DB readable)
+outputs/**/*.jpg
+outputs/**/*.jpeg
+outputs/**/*.png
+mlruns/**/*.jpg
+mlruns/**/*.jpeg
+mlruns/**/*.png
