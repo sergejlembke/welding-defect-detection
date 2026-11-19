@@ -42,7 +42,6 @@ runs/
 *.swp
 .DS_Store
 Thumbs.db
-.aiignore
 
 # Testing & Linting Caches
 .pytest_cache/
