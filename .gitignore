@@ -48,3 +48,6 @@ Thumbs.db
 .ruff_cache/
 .coverage
 htmlcov/
+
+# Miscellaneous
+.notes

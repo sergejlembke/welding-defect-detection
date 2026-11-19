@@ -6,19 +6,19 @@ __pycache__/
 .ruff_cache/
 .git/
 
-# Block all dataset files (images/labels), but allow directory traversal & data.yaml
+# Block dataset images/labels, but allow directory traversal & data.yaml
 data/**/*
 !data/**/
 !data/**/*.yaml
 
-# Block model weights & exported binaries
+# Block model weights & exported binaries across weights/, outputs/, and mlruns/
 weights/
 *.pt
 *.pth
 *.onnx
 *.engine
 
-# Block heavy plot/image artifacts in run folders (keep CSVs, YAMLs, logs & DB readable)
+# Block heavy image/plot artifacts (keep CSVs, YAMLs, JSONs, logs & mlflow.db readable)
 outputs/**/*.jpg
 outputs/**/*.jpeg
 outputs/**/*.png
