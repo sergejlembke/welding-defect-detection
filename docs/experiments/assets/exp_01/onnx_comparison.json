@@ -1,40 +1,40 @@
 {
   "hardware": "local MacBook CPUExecutionProvider",
-  "images": 2,
+  "images": 283,
   "fp32": {
     "size_mb": 227.651259,
-    "mean_ms": 8313.190934502927,
-    "median_ms": 8313.190934502927,
-    "p95_ms": 8658.019239852001,
-    "throughput_per_min": 7.217445199168591,
-    "map50": 0.5277777777777778,
+    "mean_ms": 1274.0212196003738,
+    "median_ms": 1236.8317749351263,
+    "p95_ms": 1630.109217530116,
+    "throughput_per_min": 47.09497697284853,
+    "map50": 0.6210502294938376,
     "ap50_per_class": {
-      "bad_weld": 0.5,
-      "good_weld": 0.08333333333333333,
-      "defect": 1.0
+      "bad_weld": 0.6351734377629096,
+      "good_weld": 0.7881679615953676,
+      "defect": 0.4398092891232356
     },
     "triage": {
-      "defects": 3,
-      "manual-review": 0,
-      "auto_passed": 1
+      "defects": 333,
+      "manual-review": 157,
+      "auto_passed": 176
     }
   },
   "int8": {
     "size_mb": 67.826073,
-    "mean_ms": 4968.020300002536,
-    "median_ms": 4968.020300002536,
-    "p95_ms": 5871.696887299186,
-    "throughput_per_min": 12.077245336531611,
-    "map50": 0.5303030303030303,
+    "mean_ms": 945.4348877577486,
+    "median_ms": 928.355082985945,
+    "p95_ms": 1312.631109287031,
+    "throughput_per_min": 63.46285796825171,
+    "map50": 0.350264233913836,
     "ap50_per_class": {
-      "bad_weld": 0.5,
-      "good_weld": 0.09090909090909091,
-      "defect": 1.0
+      "bad_weld": 0.3513456623902217,
+      "good_weld": 0.40157385030411336,
+      "defect": 0.2978731890471728
     },
     "triage": {
-      "defects": 1,
-      "manual-review": 2,
-      "auto_passed": 0
+      "defects": 201,
+      "manual-review": 248,
+      "auto_passed": 129
     }
   }
 }
